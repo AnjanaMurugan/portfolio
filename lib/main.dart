@@ -369,11 +369,11 @@ class _SideDotsDelegate extends SliverPersistentHeaderDelegate {
                       ? [
                     BoxShadow(
                       color: const Color(0xFF13B9FD).withOpacity(0.8),
-                      blurRadius: 28,
-                      spreadRadius: 6,
+                      blurRadius: 28.0,
+                      spreadRadius: 6.0,
                     )
                   ]
-                      : [],
+                      : null, // FIXED: Changed from [] to null to avoid negative values during animation
                 ),
               ),
             );
@@ -476,11 +476,63 @@ class _HeroSectionState extends State<HeroSection> with SingleTickerProviderStat
     _anim.forward();
   }
 
+  // FIXED: Single, correct implementation of resume download
   Future<void> _downloadResume() async {
-    final uri = Uri.parse('assets/AnjanaMFlutterDev.pdf');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      // Updated URL - check if this path exists in your repository
+      final uri = Uri.parse(
+          'https://github.com/AnjanaMurugan/portfolio/raw/main/assets/AnjanaMFlutterDev.pdf'
+      );
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // If direct download fails, try alternative approach
+        await _showResumeOptions();
+      }
+    } catch (e) {
+      // Fallback: Show options to user
+      await _showResumeOptions();
     }
+  }
+
+  Future<void> _showResumeOptions() async {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0D1B2A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Resume Download',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'Please contact me via email to receive my latest resume.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _openEmail();
+            },
+            child: const Text(
+              'Send Email',
+              style: TextStyle(color: Color(0xFF13B9FD), fontWeight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openEmail() async {

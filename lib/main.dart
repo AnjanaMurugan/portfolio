@@ -1,8 +1,8 @@
 import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'resume_downloader_stub.dart'
+if (dart.library.html) 'resume_downloader_web.dart';
 
 void main() {
   runApp(const AnjanaMuruganPortfolio());
@@ -17,16 +17,131 @@ class AnjanaMuruganPortfolio extends StatelessWidget {
       title: 'Anjana Murugan',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.w700),
-          bodyLarge: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.w400),
-        ),
+        scaffoldBackgroundColor: const Color(0xFF060A0F),
       ),
       home: const PortfolioHomePage(),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────
+
+const _kAccent = Color(0xFFB8FF57); // lime-green electric
+const _kBg = Color(0xFF060A0F);
+const _kSurface = Color(0xFF0D1520);
+const _kBorder = Color(0xFF1A2535);
+const _kTextPrimary = Color(0xFFEDF2FF);
+const _kTextSecondary = Color(0xFF6B7D93);
+
+const String _aboutText =
+    'Senior Flutter developer with 4+ years crafting cross-platform '
+    'mobile applications that feel native on every device. I obsess over '
+    'performance, architecture, and the fine details that separate good apps '
+    'from great ones.\n\n'
+    'Currently at NGXP Technologies, leading development of Smart Yacht — a '
+    'complex offline-first system — and NORA School Suite, a multi-role '
+    'platform serving parents, teachers, and drivers.\n\n'
+    'My stack: Flutter · Dart · Hive · Firebase · Bloc/Provider · REST APIs. '
+    'I write clean code, obsess over pixel-perfect UIs, and ship on time.';
+
+final List<_ExpData> _experiences = [
+  _ExpData(
+    period: '2025 — Present',
+    role: 'Senior Flutter Developer',
+    company: 'NGXP Technologies',
+    description:
+    'Lead cross-platform development for enterprise clients. Built '
+        'Smart Yacht with offline-first Hive architecture and NORA School '
+        'Suite with real-time Firebase features and multi-role access control.',
+    tech: ['Flutter', 'Dart', 'Hive', 'Provider', 'Firebase', 'Azure DevOps'],
+    current: true,
+  ),
+  _ExpData(
+    period: '2022 — 2025',
+    role: 'Flutter Developer',
+    company: 'Cocoalabs PVT LTD',
+    description:
+    'Developed NGO crowdfunding app with Razorpay integration and a '
+        'Naturopathy consultation platform. Implemented clean architecture '
+        'with Bloc and optimized app startup time by 40%.',
+    tech: ['Flutter', 'Firebase', 'Bloc', 'Razorpay', 'REST API'],
+  ),
+  _ExpData(
+    period: '2021 — 2022',
+    role: 'Flutter Developer',
+    company: 'Globosoft Solutions',
+    description:
+    'Transitioned from iOS to Flutter, delivering a Grocery Delivery '
+        'App with real-time order tracking via Google Maps and push '
+        'notifications.',
+    tech: ['Flutter', 'Firebase', 'Provider', 'Google Maps API'],
+  ),
+];
+
+final List<_ProjectData> _projects = [
+  _ProjectData(
+    index: '01',
+    title: 'Smart Yacht',
+    description:
+    'Comprehensive yacht management system with offline-first '
+        'architecture, real-time monitoring, expense tracking, and '
+        'detailed analytics dashboards.',
+    tech: ['Flutter', 'Hive', 'Provider', 'Charts', 'Azure DevOps'],
+    published: false,
+  ),
+  _ProjectData(
+    index: '02',
+    title: 'NORA School Suite',
+    description:
+    'Three role-based mobile apps for parents, teachers, and drivers '
+        'with real-time messaging, attendance tracking, and live location '
+        'features.',
+    tech: ['Flutter', 'Firebase', 'FCM', 'Provider', 'Google Maps'],
+    published: true,
+  ),
+  _ProjectData(
+    index: '03',
+    title: 'Choose My Fresh',
+    description:
+    'Full-featured grocery delivery app with Razorpay payment gateway, '
+        'Google Maps live tracking, and real-time order status updates.',
+    tech: ['Flutter', 'Bloc', 'Razorpay', 'Firebase', 'Google Maps'],
+    published: true,
+  ),
+];
+
+class _ExpData {
+  final String period, role, company, description;
+  final List<String> tech;
+  final bool current;
+  const _ExpData({
+    required this.period,
+    required this.role,
+    required this.company,
+    required this.description,
+    required this.tech,
+    this.current = false,
+  });
+}
+
+class _ProjectData {
+  final String index, title, description;
+  final List<String> tech;
+  final bool published;
+  const _ProjectData({
+    required this.index,
+    required this.title,
+    required this.description,
+    required this.tech,
+    required this.published,
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// HOME PAGE
+// ─────────────────────────────────────────────────────────
 
 class PortfolioHomePage extends StatefulWidget {
   const PortfolioHomePage({super.key});
@@ -35,108 +150,121 @@ class PortfolioHomePage extends StatefulWidget {
   State<PortfolioHomePage> createState() => _PortfolioHomePageState();
 }
 
-class _PortfolioHomePageState extends State<PortfolioHomePage> {
-  final ScrollController _scrollController = ScrollController();
-  int _currentSection = 0;
-  Offset _mousePosition = Offset.zero;
+class _PortfolioHomePageState extends State<PortfolioHomePage>
+    with TickerProviderStateMixin {
+  final _scrollCtrl = ScrollController();
+  final List<GlobalKey> _keys = List.generate(4, (_) => GlobalKey());
+  int _activeSection = 0;
+  Offset _mouse = Offset.zero;
 
-  final List<GlobalKey> _sectionKeys = List.generate(4, (_) => GlobalKey());
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _scrollCtrl.addListener(_onScroll);
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
   }
 
   void _onScroll() {
-    for (int i = 0; i < _sectionKeys.length; i++) {
-      final context = _sectionKeys[i].currentContext;
-      if (context == null) continue;
-      final box = context.findRenderObject() as RenderBox?;
+    for (int i = 0; i < _keys.length; i++) {
+      final ctx = _keys[i].currentContext;
+      if (ctx == null) continue;
+      final box = ctx.findRenderObject() as RenderBox?;
       if (box == null) continue;
-      final pos = box.localToGlobal(Offset.zero).dy;
-      if (pos < 300 && pos > -300) {
-        if (_currentSection != i) {
-          setState(() => _currentSection = i);
-        }
+      final y = box.localToGlobal(Offset.zero).dy;
+      if (y < 350 && y > -200) {
+        if (_activeSection != i) setState(() => _activeSection = i);
         break;
       }
     }
   }
 
-  void _scrollTo(int index) {
-    final context = _sectionKeys[index].currentContext;
-    if (context == null) return;
-    final box = context.findRenderObject() as RenderBox?;
+  void _scrollTo(int i) {
+    final ctx = _keys[i].currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
     if (box == null) return;
-    final pos = box.localToGlobal(Offset.zero).dy;
-    _scrollController.animateTo(
-      _scrollController.offset + pos - 100,
-      duration: const Duration(milliseconds: 600),
+    final y = box.localToGlobal(Offset.zero).dy;
+    _scrollCtrl.animateTo(
+      _scrollCtrl.offset + y - 120,
+      duration: const Duration(milliseconds: 700),
       curve: Curves.easeInOutCubic,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 1024;
+    final w = MediaQuery.sizeOf(context).width;
+    final isDesktop = w >= 1024;
 
     return Scaffold(
+      backgroundColor: _kBg,
       body: MouseRegion(
-        onHover: (event) => setState(() => _mousePosition = event.position),
-        child: Stack(
-          children: [
-            // Base background
-            Container(color: const Color(0xFF0F172A)),
-
-            // Mouse spotlight effect
-            if (isDesktop)
-              CustomPaint(
-                painter: _SpotlightPainter(_mousePosition),
-                size: Size.infinite,
-              ),
-
-            // Content
-            isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
-          ],
+        onHover: (e) => setState(() => _mouse = e.position),
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: Stack(
+            children: [
+              // Noise grain overlay (CSS-like)
+              Positioned.fill(child: _GrainOverlay()),
+              // Glow spotlight
+              if (isDesktop)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _GlowPainter(_mouse),
+                  ),
+                ),
+              // Decorative grid lines
+              Positioned.fill(child: CustomPaint(painter: _GridPainter())),
+              // Main content
+              isDesktop ? _desktopLayout() : _mobileLayout(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDesktopLayout() {
+  Widget _desktopLayout() {
     return Row(
       children: [
-        // Left sidebar - Fixed
+        // Fixed sidebar
         SizedBox(
-          width: 600,
+          width: 520,
           child: Padding(
-            padding: const EdgeInsets.only(left: 120, right: 60, top: 120, bottom: 120),
-            child: _LeftSidebar(
-              currentSection: _currentSection,
-              onSectionTap: _scrollTo,
+            padding:
+            const EdgeInsets.only(left: 96, top: 96, bottom: 96, right: 48),
+            child: _Sidebar(
+              active: _activeSection,
+              onNav: _scrollTo,
             ),
           ),
         ),
-
-        // Right content - Scrollable
+        // Scrollable content
         Expanded(
           child: SingleChildScrollView(
-            controller: _scrollController,
+            controller: _scrollCtrl,
             child: Padding(
-              padding: const EdgeInsets.only(top: 120, right: 120, bottom: 120, left: 60),
+              padding:
+              const EdgeInsets.only(top: 96, right: 96, bottom: 120, left: 48),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _AboutSection(key: _sectionKeys[0]),
-                  const SizedBox(height: 160),
-                  _ExperienceSection(key: _sectionKeys[1]),
-                  const SizedBox(height: 160),
-                  _ProjectsSection(key: _sectionKeys[2]),
-                  const SizedBox(height: 160),
-                  _ContactSection(key: _sectionKeys[3]),
-                  const SizedBox(height: 100),
-                  _buildFooter(),
+                  _SectionAbout(key: _keys[0]),
+                  _divider(),
+                  _SectionExperience(key: _keys[1]),
+                  _divider(),
+                  _SectionProjects(key: _keys[2]),
+                  _divider(),
+                  _SectionContact(key: _keys[3]),
+                  const SizedBox(height: 80),
+                  _footer(),
                 ],
               ),
             ),
@@ -146,226 +274,296 @@ class _PortfolioHomePageState extends State<PortfolioHomePage> {
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _mobileLayout() {
     return SingleChildScrollView(
-      controller: _scrollController,
+      controller: _scrollCtrl,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 64),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _MobileHeader(),
+            _MobileHero(),
             const SizedBox(height: 80),
-            _AboutSection(key: _sectionKeys[0]),
-            const SizedBox(height: 120),
-            _ExperienceSection(key: _sectionKeys[1]),
-            const SizedBox(height: 120),
-            _ProjectsSection(key: _sectionKeys[2]),
-            const SizedBox(height: 120),
-            _ContactSection(key: _sectionKeys[3]),
+            _SectionAbout(key: _keys[0]),
+            _divider(),
+            _SectionExperience(key: _keys[1]),
+            _divider(),
+            _SectionProjects(key: _keys[2]),
+            _divider(),
+            _SectionContact(key: _keys[3]),
             const SizedBox(height: 60),
-            _buildFooter(),
+            _footer(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFooter() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-    Text(
-    'Built with Flutter',
-      style: TextStyle(
-      fontSize: 13,
-      color: Colors.white.withOpacity(0.4),
-      height: 1.6,
-    ),
-    ),
-    const SizedBox(height: 4),
-    Text(
-    '© 2025 Anjana Murugan',
-    style: TextStyle(
-    fontSize: 13,
-    color: Colors.white.withOpacity(0.4),
-    ),
-    ),
-    ],
+  Widget _divider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 80),
+      child: Container(height: 1, color: _kBorder),
     );
   }
 
+  Widget _footer() => Text(
+    'Designed & built with Flutter · © 2025 Anjana Murugan',
+    style: TextStyle(
+      fontSize: 12,
+      color: _kTextSecondary.withOpacity(0.5),
+      letterSpacing: 0.5,
+    ),
+  );
+
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollCtrl.dispose();
+    _fadeCtrl.dispose();
     super.dispose();
   }
 }
 
-// Spotlight painter for mouse effect
-class _SpotlightPainter extends CustomPainter {
-  final Offset position;
+// ─────────────────────────────────────────────────────────
+// PAINTERS
+// ─────────────────────────────────────────────────────────
 
-  _SpotlightPainter(this.position);
+class _GlowPainter extends CustomPainter {
+  final Offset pos;
+  _GlowPainter(this.pos);
 
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(Canvas c, Size s) {
     final paint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF5EEAD4).withOpacity(0.15),
-          const Color(0xFF5EEAD4).withOpacity(0.08),
+          _kAccent.withOpacity(0.06),
+          _kAccent.withOpacity(0.02),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.3, 1.0],
-      ).createShader(Rect.fromCircle(center: position, radius: 600));
-
-    canvas.drawCircle(position, 600, paint);
+        stops: const [0.0, 0.35, 1.0],
+      ).createShader(Rect.fromCircle(center: pos, radius: 700));
+    c.drawCircle(pos, 700, paint);
   }
 
   @override
-  bool shouldRepaint(_SpotlightPainter oldDelegate) => position != oldDelegate.position;
+  bool shouldRepaint(_GlowPainter old) => old.pos != pos;
 }
 
-// Left Sidebar
-class _LeftSidebar extends StatelessWidget {
-  final int currentSection;
-  final void Function(int) onSectionTap;
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas c, Size s) {
+    final paint = Paint()
+      ..color = const Color(0xFF1A2535).withOpacity(0.4)
+      ..strokeWidth = 0.5;
+    const step = 80.0;
+    for (double x = 0; x < s.width; x += step) {
+      c.drawLine(Offset(x, 0), Offset(x, s.height), paint);
+    }
+    for (double y = 0; y < s.height; y += step) {
+      c.drawLine(Offset(0, y), Offset(s.width, y), paint);
+    }
+  }
 
-  const _LeftSidebar({
-    required this.currentSection,
-    required this.onSectionTap,
-  });
+  @override
+  bool shouldRepaint(_GridPainter _) => false;
+}
+
+class _GrainOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: CustomPaint(painter: _GrainPainter()),
+    );
+  }
+}
+
+class _GrainPainter extends CustomPainter {
+  @override
+  void paint(Canvas c, Size s) {
+    final rng = math.Random(42);
+    final paint = Paint()..color = Colors.white.withOpacity(0.025);
+    for (int i = 0; i < 6000; i++) {
+      c.drawCircle(
+        Offset(rng.nextDouble() * s.width, rng.nextDouble() * s.height),
+        rng.nextDouble() * 0.8,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GrainPainter _) => false;
+}
+
+// ─────────────────────────────────────────────────────────
+// SIDEBAR
+// ─────────────────────────────────────────────────────────
+
+class _Sidebar extends StatelessWidget {
+  final int active;
+  final void Function(int) onNav;
+  const _Sidebar({required this.active, required this.onNav});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Status chip
+        _StatusChip(),
+        const SizedBox(height: 32),
+
         // Name
         const Text(
-          'Anjana Murugan',
+          'Anjana\nMurugan',
           style: TextStyle(
-            fontSize: 48,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFFE2E8F0),
-            letterSpacing: -1,
-            height: 1.1,
+            fontFamily: 'Lexend',
+            fontSize: 52,
+            fontWeight: FontWeight.w800,
+            color: _kTextPrimary,
+            height: 1.05,
+            letterSpacing: -2,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // Title
-        const Text(
-          'Senior Flutter Developer',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFFE2E8F0),
-            letterSpacing: 0.3,
-          ),
+        // Role with accent
+        Row(
+          children: [
+            Container(width: 3, height: 20, color: _kAccent),
+            const SizedBox(width: 12),
+            const Text(
+              'Senior Flutter Developer',
+              style: TextStyle(
+                fontFamily: 'Lexend',
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: _kAccent,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // Tagline
         Text(
-          'I build pixel-perfect, high-performance\nmobile experiences for Android and iOS.',
+          'Pixel-perfect mobile experiences\nfor Android & iOS.',
           style: TextStyle(
-            fontSize: 16,
-            color: const Color(0xFF94A3B8),
-            height: 1.6,
+            fontSize: 15,
+            color: _kTextSecondary,
+            height: 1.65,
           ),
         ),
-        const SizedBox(height: 60),
+        const SizedBox(height: 56),
 
-        // Navigation
+        // Nav
         ...[
-          ('ABOUT', 0),
-          ('EXPERIENCE', 1),
-          ('PROJECTS', 2),
-          ('CONTACT', 3),
-        ].map((item) => _NavItem(
-          label: item.$1,
-          active: currentSection == item.$2,
-          onTap: () => onSectionTap(item.$2),
+          ('About', 0),
+          ('Experience', 1),
+          ('Projects', 2),
+          ('Contact', 3),
+        ].map((e) => _NavRow(
+          label: e.$1,
+          index: e.$2,
+          active: active == e.$2,
+          onTap: () => onNav(e.$2),
         )),
 
         const Spacer(),
 
-        // Social Links
-        Row(
-          children: [
-            _SocialIcon(
-              icon: Icons.link,
-              url: 'https://github.com/AnjanaMurugan',
-              label: 'GitHub',
-            ),
-            const SizedBox(width: 20),
-            _SocialIcon(
-              icon: Icons.business_center,
-              url: 'https://linkedin.com/in/anjana-murugan',
-              label: 'LinkedIn',
-            ),
-            const SizedBox(width: 20),
-            _SocialIcon(
-              icon: Icons.email,
-              url: 'mailto:anjana.murugan27@gmail.com',
-              label: 'Email',
-            ),
-          ],
-        ),
+        // Socials
+        _SocialRow(),
       ],
     );
   }
 }
 
-class _NavItem extends StatefulWidget {
+class _StatusChip extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _kAccent.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: _kAccent.withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: _kAccent,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: _kAccent.withOpacity(0.6), blurRadius: 6)],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Open to opportunities',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _kAccent,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavRow extends StatefulWidget {
   final String label;
+  final int index;
   final bool active;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _NavRow({
     required this.label,
+    required this.index,
     required this.active,
     required this.onTap,
   });
 
   @override
-  State<_NavItem> createState() => _NavItemState();
+  State<_NavRow> createState() => _NavRowState();
 }
 
-class _NavItemState extends State<_NavItem> {
+class _NavRowState extends State<_NavRow> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
+    final highlight = widget.active || _hover;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: widget.active || _hover ? 64 : 32,
-                height: 1,
-                color: widget.active || _hover
-                    ? const Color(0xFFE2E8F0)
-                    : const Color(0xFF475569),
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOut,
+                width: highlight ? 48 : 24,
+                height: 1.5,
+                color: highlight ? _kAccent : _kBorder,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Text(
-                widget.label,
+                widget.label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: widget.active || _hover
-                      ? const Color(0xFFE2E8F0)
-                      : const Color(0xFF94A3B8),
+                  letterSpacing: 1.8,
+                  color: highlight ? _kTextPrimary : _kTextSecondary,
                 ),
               ),
             ],
@@ -376,22 +574,39 @@ class _NavItemState extends State<_NavItem> {
   }
 }
 
-class _SocialIcon extends StatefulWidget {
-  final IconData icon;
-  final String url;
-  final String label;
-
-  const _SocialIcon({
-    required this.icon,
-    required this.url,
-    required this.label,
-  });
-
+class _SocialRow extends StatelessWidget {
   @override
-  State<_SocialIcon> createState() => _SocialIconState();
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _SocialBtn(
+          label: 'GH',
+          url: 'https://github.com/AnjanaMurugan',
+        ),
+        const SizedBox(width: 12),
+        _SocialBtn(
+          label: 'LI',
+          url: 'https://linkedin.com/in/anjana-murugan',
+        ),
+        const SizedBox(width: 12),
+        _SocialBtn(
+          label: 'ML',
+          url: 'mailto:anjana.murugan27@gmail.com',
+        ),
+      ],
+    );
+  }
 }
 
-class _SocialIconState extends State<_SocialIcon> {
+class _SocialBtn extends StatefulWidget {
+  final String label, url;
+  const _SocialBtn({required this.label, required this.url});
+
+  @override
+  State<_SocialBtn> createState() => _SocialBtnState();
+}
+
+class _SocialBtnState extends State<_SocialBtn> {
   bool _hover = false;
 
   @override
@@ -399,6 +614,7 @@ class _SocialIconState extends State<_SocialIcon> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () async {
           final uri = Uri.parse(widget.url);
@@ -408,11 +624,25 @@ class _SocialIconState extends State<_SocialIcon> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          transform: Matrix4.identity()..translate(0.0, _hover ? -4.0 : 0.0, 0.0),
-          child: Icon(
-            widget.icon,
-            color: _hover ? const Color(0xFF5EEAD4) : const Color(0xFF94A3B8),
-            size: 24,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: _hover ? _kAccent.withOpacity(0.1) : _kSurface,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: _hover ? _kAccent.withOpacity(0.5) : _kBorder,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                color: _hover ? _kAccent : _kTextSecondary,
+              ),
+            ),
           ),
         ),
       ),
@@ -420,38 +650,74 @@ class _SocialIconState extends State<_SocialIcon> {
   }
 }
 
-// Mobile Header
-class _MobileHeader extends StatelessWidget {
+// ─────────────────────────────────────────────────────────
+// MOBILE HERO
+// ─────────────────────────────────────────────────────────
+
+class _MobileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _StatusChip(),
+        const SizedBox(height: 24),
         const Text(
           'Anjana Murugan',
           style: TextStyle(
             fontSize: 40,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFFE2E8F0),
-            letterSpacing: -1,
+            fontWeight: FontWeight.w800,
+            color: _kTextPrimary,
+            height: 1.1,
+            letterSpacing: -1.5,
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'Senior Flutter Developer',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFFE2E8F0),
-          ),
+        Row(
+          children: [
+            Container(width: 3, height: 18, color: _kAccent),
+            const SizedBox(width: 10),
+            const Text(
+              'Senior Flutter Developer',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: _kAccent,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Text(
-          'I build pixel-perfect, high-performance mobile experiences for Android and iOS.',
-          style: TextStyle(
-            fontSize: 15,
-            color: const Color(0xFF94A3B8),
-            height: 1.6,
+          'Pixel-perfect mobile experiences for Android & iOS.',
+          style: TextStyle(fontSize: 15, color: _kTextSecondary, height: 1.6),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// SECTION LABEL
+// ─────────────────────────────────────────────────────────
+
+class _SLabel extends StatelessWidget {
+  final String text;
+  const _SLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(width: 24, height: 1, color: _kAccent),
+        const SizedBox(width: 12),
+        Text(
+          text.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.5,
+            color: _kAccent,
           ),
         ),
       ],
@@ -459,97 +725,62 @@ class _MobileHeader extends StatelessWidget {
   }
 }
 
-// About Section
-class _AboutSection extends StatelessWidget {
-  const _AboutSection({super.key});
+// ─────────────────────────────────────────────────────────
+// ABOUT
+// ─────────────────────────────────────────────────────────
+
+class _SectionAbout extends StatelessWidget {
+  const _SectionAbout({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle('ABOUT'),
-        const SizedBox(height: 24),
+        _SLabel('About'),
+        const SizedBox(height: 28),
         Text(
-          'I\'m a senior Flutter developer with 4+ years of experience building cross-platform mobile applications. I specialize in creating pixel-perfect, high-performance apps with clean architecture and modern state management patterns.\n\n'
-              'Currently, I work at NGXP Technologies, where I lead the development of complex mobile applications including Smart Yacht (a comprehensive yacht management system) and NORA School Suite (a multi-app school management platform).\n\n'
-              'My expertise spans offline-first architecture with Hive, real-time features with Firebase, payment integration with Razorpay, and seamless API integrations. I\'m passionate about writing clean, maintainable code and creating delightful user experiences.\n\n'
-              'Outside of work, you can find me exploring new Flutter packages, contributing to open-source projects, and staying up-to-date with the latest mobile development trends.',
+          _aboutText,
           style: TextStyle(
             fontSize: 16,
-            height: 1.7,
-            color: const Color(0xFF94A3B8),
+            height: 1.8,
+            color: _kTextSecondary,
           ),
         ),
+        const SizedBox(height: 40),
+        // Skills grid
+        _SkillsGrid(),
       ],
     );
   }
 }
 
-// Experience Section
-class _ExperienceSection extends StatelessWidget {
-  const _ExperienceSection({super.key});
+class _SkillsGrid extends StatelessWidget {
+  final List<String> skills = const [
+    'Flutter', 'Dart', 'Firebase', 'Hive',
+    'Bloc', 'Provider', 'REST API', 'Google Maps',
+    'Razorpay', 'FCM', 'Azure DevOps', 'Git',
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionTitle('EXPERIENCE'),
-        const SizedBox(height: 24),
-        _ExperienceCard(
-          period: '2025 — Present',
-          title: 'Senior Flutter Developer',
-          company: 'NGXP Technologies',
-          description: 'Lead cross-platform development with Flutter & Dart. Built Smart Yacht app with offline-first architecture using Hive. Developed School Management System with real-time features and multi-role access.',
-          tech: ['Flutter', 'Dart', 'Hive', 'Provider', 'Firebase', 'Azure DevOps'],
-          current: true,
-        ),
-        const SizedBox(height: 16),
-        _ExperienceCard(
-          period: '2022 — 2025',
-          title: 'Flutter Developer',
-          company: 'Cocoalabs PVT LTD',
-          description: 'Developed NGO app with Razorpay integration and Naturopathy consultation platform. Optimized app performance and implemented RESTful APIs with clean architecture patterns.',
-          tech: ['Flutter', 'Firebase', 'Bloc', 'Razorpay', 'REST API'],
-        ),
-        const SizedBox(height: 16),
-        _ExperienceCard(
-          period: '2021 — 2022',
-          title: 'Flutter Developer',
-          company: 'Globosoft Solutions',
-          description: 'Transitioned from iOS to Flutter development. Built Grocery Delivery App with real-time tracking, modern UI, and seamless user experience.',
-          tech: ['Flutter', 'Firebase', 'Provider', 'Google Maps API'],
-        ),
-        const SizedBox(height: 40),
-        _ViewResumeButton(),
-      ],
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: skills.map((s) => _SkillTag(s)).toList(),
     );
   }
 }
 
-class _ExperienceCard extends StatefulWidget {
-  final String period;
-  final String title;
-  final String company;
-  final String description;
-  final List<String> tech;
-  final bool current;
-
-  const _ExperienceCard({
-    required this.period,
-    required this.title,
-    required this.company,
-    required this.description,
-    required this.tech,
-    this.current = false,
-  });
+class _SkillTag extends StatefulWidget {
+  final String label;
+  const _SkillTag(this.label);
 
   @override
-  State<_ExperienceCard> createState() => _ExperienceCardState();
+  State<_SkillTag> createState() => _SkillTagState();
 }
 
-class _ExperienceCardState extends State<_ExperienceCard> {
+class _SkillTagState extends State<_SkillTag> {
   bool _hover = false;
 
   @override
@@ -558,34 +789,97 @@ class _ExperienceCardState extends State<_ExperienceCard> {
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: _hover ? _kAccent.withOpacity(0.12) : _kSurface,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: _hover ? _kAccent.withOpacity(0.6) : _kBorder,
+          ),
+        ),
+        child: Text(
+          widget.label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: _hover ? _kAccent : _kTextSecondary,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// EXPERIENCE
+// ─────────────────────────────────────────────────────────
+
+class _SectionExperience extends StatelessWidget {
+  const _SectionExperience({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SLabel('Experience'),
+        const SizedBox(height: 32),
+        ..._experiences.map((e) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _ExpCard(data: e),
+        )),
+        const SizedBox(height: 32),
+        _ResumeBtn(),
+      ],
+    );
+  }
+}
+
+class _ExpCard extends StatefulWidget {
+  final _ExpData data;
+  const _ExpCard({required this.data});
+
+  @override
+  State<_ExpCard> createState() => _ExpCardState();
+}
+
+class _ExpCardState extends State<_ExpCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.data;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: _hover
-              ? const Color(0xFF1E293B).withOpacity(0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: _hover ? _kSurface : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: _hover ? _kBorder : Colors.transparent,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Period
             SizedBox(
-              width: 120,
+              width: 130,
               child: Text(
-                widget.period,
-                style: TextStyle(
-                  fontSize: 13,
+                d.period,
+                style: const TextStyle(
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF94A3B8),
-                  letterSpacing: 0.3,
+                  color: _kTextSecondary,
+                  letterSpacing: 0.4,
                 ),
               ),
             ),
-
             const SizedBox(width: 24),
-
-            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,49 +888,52 @@ class _ExperienceCardState extends State<_ExperienceCard> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${widget.title} · ${widget.company}',
+                          '${d.role} · ${d.company}',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: _hover ? const Color(0xFF5EEAD4) : const Color(0xFFE2E8F0),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: _hover ? _kAccent : _kTextPrimary,
                           ),
                         ),
                       ),
-                      if (widget.current)
+                      if (d.current)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF5EEAD4).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: _kAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(3),
                             border: Border.all(
-                              color: const Color(0xFF5EEAD4).withOpacity(0.3),
-                            ),
+                                color: _kAccent.withOpacity(0.3)),
                           ),
                           child: const Text(
-                            'Current',
+                            'NOW',
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF5EEAD4),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: _kAccent,
+                              letterSpacing: 1.2,
                             ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
-                    widget.description,
+                    d.description,
                     style: TextStyle(
                       fontSize: 14,
-                      height: 1.6,
-                      color: const Color(0xFF94A3B8),
+                      height: 1.65,
+                      color: _kTextSecondary,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.tech.map((t) => _TechChip(label: t)).toList(),
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: d.tech
+                        .map((t) => _MiniChip(t))
+                        .toList(),
                   ),
                 ],
               ),
@@ -648,37 +945,40 @@ class _ExperienceCardState extends State<_ExperienceCard> {
   }
 }
 
-class _TechChip extends StatelessWidget {
+class _MiniChip extends StatelessWidget {
   final String label;
-
-  const _TechChip({required this.label});
+  const _MiniChip(this.label);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF5EEAD4).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: _kAccent.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF5EEAD4),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: _kAccent,
+          letterSpacing: 0.3,
         ),
       ),
     );
   }
 }
 
-class _ViewResumeButton extends StatefulWidget {
+// ── Resume download helper ──────────────────────────────
+void _downloadResume() => downloadResume();
+
+class _ResumeBtn extends StatefulWidget {
   @override
-  State<_ViewResumeButton> createState() => _ViewResumeButtonState();
+  State<_ResumeBtn> createState() => _ResumeBtnState();
 }
 
-class _ViewResumeButtonState extends State<_ViewResumeButton> {
+class _ResumeBtnState extends State<_ResumeBtn> {
   bool _hover = false;
 
   @override
@@ -686,94 +986,71 @@ class _ViewResumeButtonState extends State<_ViewResumeButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () async {
-          final uri = Uri.parse('/assets/resume/AnjanaMFlutterDev.pdf');
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'View Full Résumé',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _hover ? const Color(0xFF5EEAD4) : const Color(0xFFE2E8F0),
-              ),
+        onTap: () => _downloadResume(),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: _hover ? _kAccent : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: _hover ? _kAccent : _kBorder,
             ),
-            const SizedBox(width: 8),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              transform: Matrix4.identity()
-                ..translate(_hover ? 4.0 : 0.0, _hover ? -4.0 : 0.0, 0.0),
-              child: Icon(
-                Icons.arrow_outward,
-                size: 16,
-                color: _hover ? const Color(0xFF5EEAD4) : const Color(0xFFE2E8F0),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'View Full Résumé',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _hover ? _kBg : _kTextPrimary,
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Icon(
+                Icons.north_east,
+                size: 14,
+                color: _hover ? _kBg : _kTextPrimary,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Projects Section
-class _ProjectsSection extends StatelessWidget {
-  const _ProjectsSection({super.key});
+// ─────────────────────────────────────────────────────────
+// PROJECTS
+// ─────────────────────────────────────────────────────────
+
+class _SectionProjects extends StatelessWidget {
+  const _SectionProjects({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle('PROJECTS'),
-        const SizedBox(height: 24),
-        _ProjectCard(
-          title: 'Smart Yacht',
-          description: 'Comprehensive yacht management system with offline-first architecture, real-time monitoring, expense tracking, and detailed analytics.',
-          tech: ['Flutter', 'Hive', 'Provider', 'Charts', 'Azure DevOps'],
-          imageUrl: null,
-        ),
-        const SizedBox(height: 16),
-        _ProjectCard(
-          title: 'NORA School Suite',
-          description: 'Three role-based mobile apps for parents, teachers, and drivers with real-time messaging, attendance tracking, and live location features.',
-          tech: ['Flutter', 'Firebase', 'FCM', 'Provider', 'Google Maps'],
-          imageUrl: null,
-          published: true,
-        ),
-        const SizedBox(height: 16),
-        _ProjectCard(
-          title: 'Choose My Fresh',
-          description: 'Full-featured grocery delivery app with Razorpay payment integration, Google Maps tracking, and real-time order updates.',
-          tech: ['Flutter', 'Bloc', 'Razorpay', 'Firebase', 'Google Maps'],
-          imageUrl: null,
-          published: true,
-        ),
+        _SLabel('Projects'),
+        const SizedBox(height: 32),
+        ..._projects.map((p) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _ProjectCard(data: p),
+        )),
       ],
     );
   }
 }
 
 class _ProjectCard extends StatefulWidget {
-  final String title;
-  final String description;
-  final List<String> tech;
-  final String? imageUrl;
-  final bool published;
-
-  const _ProjectCard({
-    required this.title,
-    required this.description,
-    required this.tech,
-    this.imageUrl,
-    this.published = false,
-  });
+  final _ProjectData data;
+  const _ProjectCard({required this.data});
 
   @override
   State<_ProjectCard> createState() => _ProjectCardState();
@@ -784,6 +1061,7 @@ class _ProjectCardState extends State<_ProjectCard> {
 
   @override
   Widget build(BuildContext context) {
+    final p = widget.data;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -791,48 +1069,86 @@ class _ProjectCardState extends State<_ProjectCard> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: _hover
-              ? const Color(0xFF1E293B).withOpacity(0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: _hover ? _kSurface : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: _hover ? _kBorder : Colors.transparent,
+          ),
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: _hover ? const Color(0xFF5EEAD4) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
+            // Index number
+            SizedBox(
+              width: 40,
+              child: Text(
+                p.index,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: _hover
+                      ? _kAccent.withOpacity(0.4)
+                      : _kBorder,
+                  height: 1,
                 ),
-                if (widget.published)
-                  Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: const Color(0xFF5EEAD4),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              widget.description,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.6,
-                color: const Color(0xFF94A3B8),
               ),
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.tech.map((t) => _TechChip(label: t)).toList(),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          p.title,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: _hover ? _kAccent : _kTextPrimary,
+                          ),
+                        ),
+                      ),
+                      if (p.published)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F4C1A),
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(
+                                color: const Color(0xFF1E8C3A)),
+                          ),
+                          child: const Text(
+                            'LIVE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF4ADE80),
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    p.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.65,
+                      color: _kTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: p.tech.map((t) => _MiniChip(t)).toList(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -841,40 +1157,56 @@ class _ProjectCardState extends State<_ProjectCard> {
   }
 }
 
-// Contact Section
-class _ContactSection extends StatelessWidget {
-  const _ContactSection({super.key});
+// ─────────────────────────────────────────────────────────
+// CONTACT
+// ─────────────────────────────────────────────────────────
+
+class _SectionContact extends StatelessWidget {
+  const _SectionContact({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle('CONTACT'),
-        const SizedBox(height: 24),
+        _SLabel('Contact'),
+        const SizedBox(height: 28),
+        const Text(
+          'Let\'s build something great together.',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: _kTextPrimary,
+            height: 1.2,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 20),
         Text(
-          'I\'m currently looking for new opportunities and my inbox is always open. Whether you have a question or just want to say hi, I\'ll try my best to get back to you!',
+          'I\'m currently open to new Flutter roles and freelance '
+              'projects. Whether you have a question, a project idea, or '
+              'just want to connect — my inbox is open.',
           style: TextStyle(
             fontSize: 16,
             height: 1.7,
-            color: const Color(0xFF94A3B8),
+            color: _kTextSecondary,
           ),
         ),
-        const SizedBox(height: 32),
-        _ContactLink(
-          icon: Icons.email,
+        const SizedBox(height: 40),
+        _ContactRow(
+          icon: Icons.mail_outline_rounded,
           label: 'anjana.murugan27@gmail.com',
           url: 'mailto:anjana.murugan27@gmail.com',
         ),
         const SizedBox(height: 16),
-        _ContactLink(
-          icon: Icons.phone,
-          label: '+91 7012733764',
+        _ContactRow(
+          icon: Icons.phone_outlined,
+          label: '+91 7012 733 764',
           url: 'tel:+917012733764',
         ),
         const SizedBox(height: 16),
-        _ContactLink(
-          icon: Icons.location_on,
+        _ContactRow(
+          icon: Icons.location_on_outlined,
           label: 'Kochi, Kerala, India',
           url: null,
         ),
@@ -883,34 +1215,28 @@ class _ContactSection extends StatelessWidget {
   }
 }
 
-class _ContactLink extends StatefulWidget {
+class _ContactRow extends StatefulWidget {
   final IconData icon;
   final String label;
   final String? url;
-
-  const _ContactLink({
-    required this.icon,
-    required this.label,
-    this.url,
-  });
+  const _ContactRow({required this.icon, required this.label, this.url});
 
   @override
-  State<_ContactLink> createState() => _ContactLinkState();
+  State<_ContactRow> createState() => _ContactRowState();
 }
 
-class _ContactLinkState extends State<_ContactLink> {
+class _ContactRowState extends State<_ContactRow> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final isClickable = widget.url != null;
-
+    final clickable = widget.url != null;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      cursor: isClickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: clickable ? SystemMouseCursors.click : MouseCursor.defer,
       child: GestureDetector(
-        onTap: isClickable
+        onTap: clickable
             ? () async {
           final uri = Uri.parse(widget.url!);
           if (await canLaunchUrl(uri)) {
@@ -922,43 +1248,32 @@ class _ContactLinkState extends State<_ContactLink> {
           children: [
             Icon(
               widget.icon,
-              size: 20,
-              color: _hover && isClickable
-                  ? const Color(0xFF5EEAD4)
-                  : const Color(0xFF94A3B8),
+              size: 18,
+              color: _hover && clickable ? _kAccent : _kTextSecondary,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Text(
               widget.label,
               style: TextStyle(
-                fontSize: 16,
-                color: _hover && isClickable
-                    ? const Color(0xFF5EEAD4)
-                    : const Color(0xFFE2E8F0),
+                fontSize: 15,
+                color: _hover && clickable ? _kAccent : _kTextPrimary,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            if (clickable) ...[
+              const SizedBox(width: 6),
+              AnimatedSlide(
+                offset: _hover ? const Offset(0.15, -0.15) : Offset.zero,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  Icons.north_east,
+                  size: 12,
+                  color: _hover ? _kAccent : _kTextSecondary,
+                ),
+              ),
+            ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-// Section Title
-class _SectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SectionTitle(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.2,
-        color: Color(0xFFE2E8F0),
       ),
     );
   }

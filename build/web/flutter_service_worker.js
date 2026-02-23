@@ -3,11 +3,11 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "eb17dc51f742066aa862d22cf4d41997",
+const RESOURCES = {"flutter_bootstrap.js": "d107791ac5022ab164b9fb7afb1b6f99",
 "version.json": "009c9e65172e010890f7f65fde438006",
 "index.html": "80b7f3c2a7bb29c643595523dbc0fc2e",
 "/": "80b7f3c2a7bb29c643595523dbc0fc2e",
-"main.dart.js": "e1445e309f41f91251e6d1e3f54245ce",
+"main.dart.js": "676e6592a8f74615f62d40ca317451e9",
 "flutter.js": "888483df48293866f9f41d3d9274a779",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
 "icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
@@ -24,7 +24,7 @@ const RESOURCES = {"flutter_bootstrap.js": "eb17dc51f742066aa862d22cf4d41997",
 "assets/AssetManifest.bin": "3a81dfcd9072eb5acbb8739c80a0eca9",
 "assets/fonts/Lexend-Regular.ttf": "08de0f5b6a1ce618dcf440deb748a474",
 "assets/fonts/Lexend-SemiBold.ttf": "0b37136e46839e0b0fcb6fc6db621f4f",
-"assets/fonts/MaterialIcons-Regular.otf": "727bbdc20be75acb93a20222a9165fd2",
+"assets/fonts/MaterialIcons-Regular.otf": "5adb4622a5829e3c8677fa8d4cef1cf4",
 "assets/fonts/Lexend-Bold.ttf": "4825b136e327199b645d2f3a6ec63915",
 "assets/assets/resume/AnjanaMFlutterDev.pdf": "45990b3516540f8069cfc5d48caf8d09",
 "canvaskit/skwasm.js": "1ef3ea3a0fec4569e5d531da25f34095",
